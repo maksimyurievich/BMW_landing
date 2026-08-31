@@ -279,6 +279,35 @@ window.addEventListener('popstate', function (event) {
     modal.classList.remove('active');
   }
 });
+  // 1. Отслеживаем открытие модального окна
+// Кастомная функция или клик по карточке, которая открывает модалку:
+function openMyModal(modalElement) {
+  modalElement.classList.add('active'); // или твой класс открытия (например, display: block)
+  
+  // ДОБАВЛЯЕМ СОСТОЯНИЕ В ИСТОРИЮ БРАУЗЕРА
+  history.pushState({ modalOpen: true }, '', '#modal');
+}
+
+// 2. Функция закрытия модалки крестиком или кнопкой «Забронировать»
+function closeMyModal(modalElement) {
+  modalElement.classList.remove('active');
+  
+  // Убираем #modal из URL, если он там есть
+  if (window.location.hash === '#modal') {
+    history.back();
+  }
+}
+
+// 3. САМОЕ ГЛАВНОЕ: Отслеживаем кнопку «Назад» на смартфоне
+window.addEventListener('popstate', function (event) {
+  // Находим открытое модальное окно (замени .modal-active на свой класс открытого окна)
+  const activeModal = document.querySelector('.modal.active'); 
+  
+  if (activeModal) {
+    // Если окно открыто — просто закрываем его, сайт НЕ ЗАКРОЕТСЯ!
+    activeModal.classList.remove('active');
+  }
+});
 
     </script>
 </body>
