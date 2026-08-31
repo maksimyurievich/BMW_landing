@@ -243,6 +243,43 @@
                 }, 1500);
             });
         }
+        // 1. Находим элементы (замени селекторы на свои)
+const modal = document.querySelector('.modal'); // твоё модальное окно
+const openBtn = document.querySelector('.open-modal-btn'); // кнопка открытия
+const closeBtn = document.querySelector('.close-modal-btn'); // кнопка закрытия (крестик)
+
+// Функция открытия модалки
+function openModal() {
+  modal.classList.add('active'); // показываем окно (например, через CSS display/opacity)
+  
+  // Добавляем состояние в историю браузера (в URL появится #modal)
+  history.pushState({ modalOpen: true }, '', '#modal');
+}
+
+// Функция закрытия модалки
+function closeModal() {
+  modal.classList.remove('active'); // скрываем окно
+  
+  // Если в URL остался #modal, убираем его, чтобы не засорять историю
+  if (window.location.hash === '#modal') {
+    history.back();
+  }
+}
+
+// Открытие по клику на кнопку
+openBtn.addEventListener('click', openModal);
+
+// Закрытие по клику на крестик
+closeBtn.addEventListener('click', closeModal);
+
+// 2. САМОЕ ГЛАВНОЕ: Отслеживаем кнопку «Назад» в браузере/телефоне
+window.addEventListener('popstate', function (event) {
+  // Если мы нажали назад и модалка открыта — просто закрываем её
+  if (modal.classList.contains('active')) {
+    modal.classList.remove('active');
+  }
+});
+
     </script>
 </body>
 
