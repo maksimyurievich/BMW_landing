@@ -159,133 +159,112 @@
         </div>
     </div>
 
-    <footer>
+   <footer>
         <p>© 2026 BMW Russia. THE ULTIMATE DRIVING MACHINE.</p>
     </footer>
 
-
     <script>
-        // Переменная для отслеживания текущего открытого окна
         let currentOpenedModal = null;
 
-        // Вспомогательная функция открытия
-        function showModal(modal) {
+        // 1. ФУНКЦИИ ОТКРЫТИЯ И ЗАКРЫТИЯ
+        function openModalWindow(modal) {
             if (!modal) return;
-            // Если уже было открыто другое окно, сначала прячем его
-            if (currentOpenedModal && currentOpenedModal !== modal) {
-                currentOpenedModal.style.display = "none";
-            }
             modal.style.display = "block";
             currentOpenedModal = modal;
-
-            // Добавляем хэш в историю браузера, чтобы кнопка «Назад» не закрывала сайт
-            history.pushState({ modalOpen: true }, '', '#modal');
+            
+            // Меняем hash в адресной строке
+            location.hash = "modal";
         }
 
-        // Вспомогательная функция закрытия без отката истории
-        function hideModal(modal) {
+        function closeModalWindow(modal) {
             if (!modal) return;
             modal.style.display = "none";
-            if (currentOpenedModal === modal) {
-                currentOpenedModal = null;
+            currentOpenedModal = null;
+
+            // Если в URL висит #modal, убираем его
+            if (location.hash === "#modal") {
+                history.back();
             }
         }
 
-        // 1. УПРАВЛЕНИЕ МОДАЛЬНЫМИ ОКНАМИ
+        // 2. ПОДХВАТЫВАЕМ КНОПКИ
         const priceModal = document.getElementById("priceModal");
         const priceBtns = document.querySelectorAll(".open-modal");
         const detailBtns = document.querySelectorAll(".open-detail");
         const closeBtns = document.querySelectorAll(".close, .close-detail");
 
-        // Открытие формы "Узнать цену / Забронировать / Конфигуратор"
+        // Кнопки "Узнать цену / Забронировать"
         priceBtns.forEach(btn => {
-            btn.onclick = function (e) {
+            btn.addEventListener('click', function (e) {
                 e.preventDefault();
-                showModal(priceModal);
-            }
+                openModalWindow(priceModal);
+            });
         });
 
-        // Открытие деталей машин (G80 / G82)
+        // Карточки машин
         detailBtns.forEach(btn => {
-            btn.onclick = function () {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
                 const targetId = this.getAttribute("data-target");
                 const targetModal = document.getElementById(targetId);
-                showModal(targetModal);
-            }
+                openModalWindow(targetModal);
+            });
         });
 
-        // Закрытие по кнопке крестика
+        // Крестики закрытия
         closeBtns.forEach(btn => {
-            btn.onclick = function () {
+            btn.addEventListener('click', function () {
                 const modal = this.closest('.modal');
-                hideModal(modal);
-                // Если мы сами закрыли крестиком и у нас висит #modal, убираем его из истории
-                if (window.location.hash === '#modal') {
-                    history.back();
-                }
-            }
+                closeModalWindow(modal);
+            });
         });
 
-        // Закрытие при клике вне окна (по темному фону)
-        window.onclick = function (event) {
+        // Клик по темному фону вокруг окна
+        window.addEventListener('click', function (event) {
             if (event.target.classList.contains('modal')) {
-                hideModal(event.target);
-                if (window.location.hash === '#modal') {
-                    history.back();
-                }
-            }
-        }
-
-        // 2. ГЛАВНАЯ МАГИЯ: ОБРАБОТКА КНОПКИ «НАЗАД» НА ТЕЛЕФОНЕ И В БРАУЗЕРЕ
-        window.addEventListener('popstate', function () {
-            // Если в момент нажатия «Назад» открыто окно — просто закрываем его
-            if (currentOpenedModal) {
-                hideModal(currentOpenedModal);
+                closeModalWindow(event.target);
             }
         });
 
-        // 3. ЛОГИКА ОТПРАВКИ ФОРМЫ
-        const callbackForm = document.getElementById('callbackForm');
+        // 3. САМОЕ ГЛАВНОЕ: СЛЕДИМ ЗА ИЗМЕНЕНИЕМ HASH (КНОПКА «НАЗАД»)
+        window.addEventListener('hashchange', function () {
+            // Если пользователь нажал «Назад» на телефоне, #modal исчезает из URL
+            if (location.hash !== "#modal" && currentOpenedModal) {
+                currentOpenedModal.style.display = "none";
+                currentOpenedModal = null;
+            }
+        });
 
+        // 4. ЛОГИКА ОТПРАВКИ ФОРМЫ
+        const callbackForm = document.getElementById('callbackForm');
         if (callbackForm) {
             callbackForm.addEventListener('submit', function (e) {
-                e.preventDefault(); // Останавливаем перезагрузку
+                e.preventDefault();
 
                 const btn = this.querySelector('.submit-btn');
                 const originalText = btn.innerText;
 
-                // Визуальный отклик отправки
                 btn.innerText = 'ОТПРАВКА...';
                 btn.disabled = true;
 
                 setTimeout(() => {
-                    // Закрываем модалку
-                    hideModal(priceModal);
-                    if (window.location.hash === '#modal') {
-                        history.back();
-                    }
+                    closeModalWindow(priceModal);
 
-                    // Создаем плашку уведомления
                     const toast = document.createElement('div');
                     toast.className = 'success-toast';
-                    toast.innerHTML = `
-                        <strong>ЗАЯВКА ПРИНЯТА</strong>
-                        <span>Менеджер свяжется с вами в течение 15 минут</span>
-                    `;
-
-
+                    toast.innerHTML = 
+                       ` <strong>ЗАЯВКА ПРИНЯТА</strong>
+                        <span>Менеджер свяжется с вами в течение 15 минут</span>`
+                    ;
                     document.body.appendChild(toast);
 
-                    // Плавный выезд уведомления
                     setTimeout(() => toast.classList.add('show'), 100);
 
-                    // Скрываем и удаляем через 4 сек
                     setTimeout(() => {
                         toast.classList.remove('show');
                         setTimeout(() => toast.remove(), 400);
                     }, 4000);
 
-                    // Возвращаем кнопку в норму и чистим форму
                     btn.innerText = originalText;
                     btn.disabled = false;
                     callbackForm.reset();
