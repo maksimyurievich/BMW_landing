@@ -99,7 +99,8 @@
                     </table>
                     <p>Экстремальный атлетизм и дерзкий дизайн. Идеальное распределение веса для трека и повседневных
                         поездок.</p>
-                    <button class="btn-main open-modal" style="width: 100%; margin-top: 20px; padding: 10px; font-size: 18px;">Забронировать</button>
+                    <button class="btn-main open-modal"
+                        style="width: 100%; margin-top: 20px; padding: 10px; font-size: 18px;">Забронировать</button>
                 </div>
             </div>
         </div>
@@ -138,7 +139,8 @@
                     </table>
                     <p>Сочетание практичности четырехдверного седана и ярости гоночного болида. Лучший выбор для драйва
                         всей семьей.</p>
-                    <button class="btn-main open-modal" style="width: 100%; margin-top: 20px;padding: 10px; font-size: 18px;">Забронировать</button>
+                    <button class="btn-main open-modal"
+                        style="width: 100%; margin-top: 20px;padding: 10px; font-size: 18px;">Забронировать</button>
                 </div>
             </div>
         </div>
@@ -161,46 +163,88 @@
         <p>© 2026 BMW Russia. THE ULTIMATE DRIVING MACHINE.</p>
     </footer>
 
+
     <script>
+        // Переменная для отслеживания текущего открытого окна
+        let currentOpenedModal = null;
+
+        // Вспомогательная функция открытия
+        function showModal(modal) {
+            if (!modal) return;
+            // Если уже было открыто другое окно, сначала прячем его
+            if (currentOpenedModal && currentOpenedModal !== modal) {
+                currentOpenedModal.style.display = "none";
+            }
+            modal.style.display = "block";
+            currentOpenedModal = modal;
+
+            // Добавляем хэш в историю браузера, чтобы кнопка «Назад» не закрывала сайт
+            history.pushState({ modalOpen: true }, '', '#modal');
+        }
+
+        // Вспомогательная функция закрытия без отката истории
+        function hideModal(modal) {
+            if (!modal) return;
+            modal.style.display = "none";
+            if (currentOpenedModal === modal) {
+                currentOpenedModal = null;
+            }
+        }
+
         // 1. УПРАВЛЕНИЕ МОДАЛЬНЫМИ ОКНАМИ
         const priceModal = document.getElementById("priceModal");
         const priceBtns = document.querySelectorAll(".open-modal");
         const detailBtns = document.querySelectorAll(".open-detail");
         const closeBtns = document.querySelectorAll(".close, .close-detail");
 
-        // Открытие формы
+        // Открытие формы "Узнать цену / Забронировать / Конфигуратор"
         priceBtns.forEach(btn => {
             btn.onclick = function (e) {
                 e.preventDefault();
-                // Сначала закрываем все окна деталей, если они были открыты
-                document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
-                priceModal.style.display = "block";
+                showModal(priceModal);
             }
         });
 
-        // Открытие деталей машин
+        // Открытие деталей машин (G80 / G82)
         detailBtns.forEach(btn => {
             btn.onclick = function () {
                 const targetId = this.getAttribute("data-target");
-                document.getElementById(targetId).style.display = "block";
+                const targetModal = document.getElementById(targetId);
+                showModal(targetModal);
             }
         });
 
         // Закрытие по кнопке крестика
         closeBtns.forEach(btn => {
             btn.onclick = function () {
-                this.closest('.modal').style.display = "none";
+                const modal = this.closest('.modal');
+                hideModal(modal);
+                // Если мы сами закрыли крестиком и у нас висит #modal, убираем его из истории
+                if (window.location.hash === '#modal') {
+                    history.back();
+                }
             }
         });
 
-        // Закрытие при клике вне окна
+        // Закрытие при клике вне окна (по темному фону)
         window.onclick = function (event) {
             if (event.target.classList.contains('modal')) {
-                event.target.style.display = "none";
+                hideModal(event.target);
+                if (window.location.hash === '#modal') {
+                    history.back();
+                }
             }
         }
 
-        // 2. ЛОГИКА ОТПРАВКИ ФОРМЫ
+        // 2. ГЛАВНАЯ МАГИЯ: ОБРАБОТКА КНОПКИ «НАЗАД» НА ТЕЛЕФОНЕ И В БРАУЗЕРЕ
+        window.addEventListener('popstate', function () {
+            // Если в момент нажатия «Назад» открыто окно — просто закрываем его
+            if (currentOpenedModal) {
+                hideModal(currentOpenedModal);
+            }
+        });
+
+        // 3. ЛОГИКА ОТПРАВКИ ФОРМЫ
         const callbackForm = document.getElementById('callbackForm');
 
         if (callbackForm) {
@@ -216,7 +260,10 @@
 
                 setTimeout(() => {
                     // Закрываем модалку
-                    priceModal.style.display = "none";
+                    hideModal(priceModal);
+                    if (window.location.hash === '#modal') {
+                        history.back();
+                    }
 
                     // Создаем плашку уведомления
                     const toast = document.createElement('div');
@@ -225,6 +272,8 @@
                         <strong>ЗАЯВКА ПРИНЯТА</strong>
                         <span>Менеджер свяжется с вами в течение 15 минут</span>
                     `;
+
+
                     document.body.appendChild(toast);
 
                     // Плавный выезд уведомления
@@ -243,72 +292,6 @@
                 }, 1500);
             });
         }
-        // 1. Находим элементы (замени селекторы на свои)
-const modal = document.querySelector('.modal'); // твоё модальное окно
-const openBtn = document.querySelector('.open-modal-btn'); // кнопка открытия
-const closeBtn = document.querySelector('.close-modal-btn'); // кнопка закрытия (крестик)
-
-// Функция открытия модалки
-function openModal() {
-  modal.classList.add('active'); // показываем окно (например, через CSS display/opacity)
-  
-  // Добавляем состояние в историю браузера (в URL появится #modal)
-  history.pushState({ modalOpen: true }, '', '#modal');
-}
-
-// Функция закрытия модалки
-function closeModal() {
-  modal.classList.remove('active'); // скрываем окно
-  
-  // Если в URL остался #modal, убираем его, чтобы не засорять историю
-  if (window.location.hash === '#modal') {
-    history.back();
-  }
-}
-
-// Открытие по клику на кнопку
-openBtn.addEventListener('click', openModal);
-
-// Закрытие по клику на крестик
-closeBtn.addEventListener('click', closeModal);
-
-// 2. САМОЕ ГЛАВНОЕ: Отслеживаем кнопку «Назад» в браузере/телефоне
-window.addEventListener('popstate', function (event) {
-  // Если мы нажали назад и модалка открыта — просто закрываем её
-  if (modal.classList.contains('active')) {
-    modal.classList.remove('active');
-  }
-});
-  // 1. Отслеживаем открытие модального окна
-// Кастомная функция или клик по карточке, которая открывает модалку:
-function openMyModal(modalElement) {
-  modalElement.classList.add('active'); // или твой класс открытия (например, display: block)
-  
-  // ДОБАВЛЯЕМ СОСТОЯНИЕ В ИСТОРИЮ БРАУЗЕРА
-  history.pushState({ modalOpen: true }, '', '#modal');
-}
-
-// 2. Функция закрытия модалки крестиком или кнопкой «Забронировать»
-function closeMyModal(modalElement) {
-  modalElement.classList.remove('active');
-  
-  // Убираем #modal из URL, если он там есть
-  if (window.location.hash === '#modal') {
-    history.back();
-  }
-}
-
-// 3. САМОЕ ГЛАВНОЕ: Отслеживаем кнопку «Назад» на смартфоне
-window.addEventListener('popstate', function (event) {
-  // Находим открытое модальное окно (замени .modal-active на свой класс открытого окна)
-  const activeModal = document.querySelector('.modal.active'); 
-  
-  if (activeModal) {
-    // Если окно открыто — просто закрываем его, сайт НЕ ЗАКРОЕТСЯ!
-    activeModal.classList.remove('active');
-  }
-});
-
     </script>
 </body>
 
